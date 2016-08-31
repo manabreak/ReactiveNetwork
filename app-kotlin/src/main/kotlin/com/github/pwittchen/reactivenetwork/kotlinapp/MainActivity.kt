@@ -19,14 +19,15 @@ import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import com.github.pwittchen.reactivenetwork.library.ReactiveNetwork
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
-import rx.schedulers.Schedulers
+
 
 class MainActivity : Activity() {
-  private var connectivitySub: Subscription? = null
-  private var internetSub: Subscription? = null
+  private var connectivityDisposable: Disposable? = null
+  private var internetDisposable: Disposable? = null
 
   companion object {
     private val TAG = "ReactiveNetwork"
@@ -40,17 +41,17 @@ class MainActivity : Activity() {
   override fun onResume() {
     super.onResume()
 
-    connectivitySub = ReactiveNetwork.observeNetworkConnectivity(applicationContext)
+    connectivityDisposable = ReactiveNetwork.observeNetworkConnectivity(applicationContext)
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe { connectivity ->
           Log.d(TAG, connectivity.toString())
           val state = connectivity.state;
           val name = connectivity.name
-          connectivity_status.text = String.format("state: %s, name: %s", state, name);
+          connectivity_status.text = String.format("state: %s, name: %s", state, name)
         }
 
-    internetSub = ReactiveNetwork.observeInternetConnectivity()
+    internetDisposable = ReactiveNetwork.observeInternetConnectivity()
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe { isConnectedToInternet ->
@@ -60,13 +61,13 @@ class MainActivity : Activity() {
 
   override fun onPause() {
     super.onPause()
-    safelyUnsubscribe(connectivitySub)
-    safelyUnsubscribe(internetSub)
+    safelyDispose(connectivityDisposable)
+    safelyDispose(internetDisposable)
   }
 
-  private fun safelyUnsubscribe(subscription: Subscription?) {
-    if (subscription != null && !subscription.isUnsubscribed) {
-      subscription.unsubscribe()
+  private fun safelyDispose(disposable: Disposable?) {
+    if (disposable != null && !disposable.isDisposed) {
+      disposable.dispose()
     }
   }
 }

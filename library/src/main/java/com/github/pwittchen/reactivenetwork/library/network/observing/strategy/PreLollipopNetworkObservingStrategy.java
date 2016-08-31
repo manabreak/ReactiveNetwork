@@ -20,60 +20,41 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.os.Looper;
 import com.github.pwittchen.reactivenetwork.library.Connectivity;
 import com.github.pwittchen.reactivenetwork.library.network.observing.NetworkObservingStrategy;
-import rx.Observable;
-import rx.Scheduler;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.subscriptions.Subscriptions;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Action;
 
 /**
  * Network observing strategy for Android devices before Lollipop (API 20 or lower)
  */
 public class PreLollipopNetworkObservingStrategy implements NetworkObservingStrategy {
+
+  private BroadcastReceiver receiver;
+
   @Override public Observable<Connectivity> observeNetworkConnectivity(final Context context) {
     final IntentFilter filter = new IntentFilter();
     filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
 
-    return Observable.create(new Observable.OnSubscribe<Connectivity>() {
-      @Override public void call(final Subscriber<? super Connectivity> subscriber) {
-        final BroadcastReceiver receiver = new BroadcastReceiver() {
+    return Observable.create(new ObservableOnSubscribe<Connectivity>() {
+      @Override public void subscribe(final ObservableEmitter<Connectivity> e) throws Exception {
+
+        receiver = new BroadcastReceiver() {
           @Override public void onReceive(Context context, Intent intent) {
-            subscriber.onNext(Connectivity.create(context));
+            e.onNext(Connectivity.create(context));
           }
         };
 
         context.registerReceiver(receiver, filter);
-
-        subscriber.add(unsubscribeInUiThread(new Action0() {
-          @Override public void call() {
-            context.unregisterReceiver(receiver);
-          }
-        }));
       }
-    }).defaultIfEmpty(Connectivity.create());
-  }
-
-  private Subscription unsubscribeInUiThread(final Action0 unsubscribe) {
-    return Subscriptions.create(new Action0() {
-
-      @Override public void call() {
-        if (Looper.getMainLooper() == Looper.myLooper()) {
-          unsubscribe.call();
-        } else {
-          final Scheduler.Worker inner = AndroidSchedulers.mainThread().createWorker();
-          inner.schedule(new Action0() {
-            @Override public void call() {
-              unsubscribe.call();
-              inner.unsubscribe();
-            }
-          });
+    }).doOnCancel(new Action() {
+      @Override public void run() throws Exception {
+        if (receiver != null) {
+          context.unregisterReceiver(receiver);
         }
       }
-    });
+    }).defaultIfEmpty(Connectivity.create());
   }
 }

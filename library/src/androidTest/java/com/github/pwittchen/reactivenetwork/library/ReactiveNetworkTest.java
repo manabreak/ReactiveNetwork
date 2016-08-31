@@ -20,9 +20,9 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import com.github.pwittchen.reactivenetwork.library.network.observing.NetworkObservingStrategy;
 import com.github.pwittchen.reactivenetwork.library.network.observing.strategy.LollipopNetworkObservingStrategy;
+import io.reactivex.functions.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import rx.functions.Action1;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -46,8 +46,8 @@ import static com.google.common.truth.Truth.assertThat;
 
   @Test public void observeNetworkConnectivityShouldBeDefaultIfEmpty() {
     ReactiveNetwork.observeNetworkConnectivity(InstrumentationRegistry.getContext())
-        .subscribe(new Action1<Connectivity>() {
-          @Override public void call(Connectivity connectivity) {
+        .subscribe(new Consumer<Connectivity>() {
+          @Override public void accept(Connectivity connectivity) throws Exception {
             assertThat(connectivity.isDefault()).isTrue();
           }
         });

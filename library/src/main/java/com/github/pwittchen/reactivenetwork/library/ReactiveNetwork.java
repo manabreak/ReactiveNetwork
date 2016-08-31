@@ -20,13 +20,13 @@ import android.os.Build;
 import com.github.pwittchen.reactivenetwork.library.network.observing.NetworkObservingStrategy;
 import com.github.pwittchen.reactivenetwork.library.network.observing.strategy.LollipopNetworkObservingStrategy;
 import com.github.pwittchen.reactivenetwork.library.network.observing.strategy.PreLollipopNetworkObservingStrategy;
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
-import rx.Observable;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 /**
  * ReactiveNetwork is an Android library
@@ -123,8 +123,8 @@ public class ReactiveNetwork {
     Preconditions.checkPositive(timeoutInMs, "timeoutInMs is not positive number");
 
     return Observable.interval(intervalInMs, TimeUnit.MILLISECONDS, Schedulers.io())
-        .map(new Func1<Long, Boolean>() {
-          @Override public Boolean call(Long tick) {
+        .map(new Function<Long, Boolean>() {
+          @Override public Boolean apply(Long tick) throws Exception {
             try {
               Socket socket = new Socket();
               socket.connect(new InetSocketAddress(host, port), timeoutInMs);

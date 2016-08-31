@@ -23,9 +23,10 @@ import android.net.Network;
 import android.net.NetworkRequest;
 import com.github.pwittchen.reactivenetwork.library.Connectivity;
 import com.github.pwittchen.reactivenetwork.library.network.observing.NetworkObservingStrategy;
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action0;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.functions.Action;
 
 /**
  * Network observing strategy for devices with Android Lollipop (API 21) or higher
@@ -38,28 +39,28 @@ import rx.functions.Action0;
     final String service = Context.CONNECTIVITY_SERVICE;
     final ConnectivityManager manager = (ConnectivityManager) context.getSystemService(service);
 
-    return Observable.create(new Observable.OnSubscribe<Connectivity>() {
-      @Override public void call(final Subscriber<? super Connectivity> subscriber) {
-        networkCallback = createNetworkCallback(subscriber, context);
+    return Observable.create(new ObservableOnSubscribe<Connectivity>() {
+      @Override public void subscribe(final ObservableEmitter<Connectivity> e) throws Exception {
+        networkCallback = createNetworkCallback(e, context);
         final NetworkRequest networkRequest = new NetworkRequest.Builder().build();
         manager.registerNetworkCallback(networkRequest, networkCallback);
       }
-    }).doOnUnsubscribe(new Action0() {
-      @Override public void call() {
+    }).doOnCancel(new Action() {
+      @Override public void run() throws Exception {
         manager.unregisterNetworkCallback(networkCallback);
       }
     }).startWith(Connectivity.create(context)).distinctUntilChanged();
   }
 
   private ConnectivityManager.NetworkCallback createNetworkCallback(
-      final Subscriber<? super Connectivity> subscriber, final Context context) {
+      final ObservableEmitter<Connectivity> emitter, final Context context) {
     return new ConnectivityManager.NetworkCallback() {
       @Override public void onAvailable(Network network) {
-        subscriber.onNext(Connectivity.create(context));
+        emitter.onNext(Connectivity.create(context));
       }
 
       @Override public void onLost(Network network) {
-        subscriber.onNext(Connectivity.create(context));
+        emitter.onNext(Connectivity.create(context));
       }
     };
   }

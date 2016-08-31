@@ -18,7 +18,7 @@ package com.github.pwittchen.reactivenetwork.library;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import rx.functions.Func1;
+import io.reactivex.functions.Function;
 
 /**
  * Connectivity class represents current connectivity, which consists of state, type and name
@@ -94,9 +94,9 @@ public class Connectivity {
    * @param states NetworkInfo.State, which can have one or more states
    * @return true if at least one given state occurred
    */
-  public static Func1<Connectivity, Boolean> hasState(final NetworkInfo.State... states) {
-    return new Func1<Connectivity, Boolean>() {
-      @Override public Boolean call(Connectivity connectivity) {
+  public static Function<Connectivity, Boolean> hasState(final NetworkInfo.State... states) {
+    return new Function<Connectivity, Boolean>() {
+      @Override public Boolean apply(Connectivity connectivity) throws Exception {
         for (NetworkInfo.State state : states) {
           if (connectivity.getState() == state) {
             return true;
@@ -113,9 +113,9 @@ public class Connectivity {
    * @param types int, which can have one or more types
    * @return true if at least one given type occurred
    */
-  public static Func1<Connectivity, Boolean> hasType(final int... types) {
-    return new Func1<Connectivity, Boolean>() {
-      @Override public Boolean call(Connectivity connectivity) {
+  public static Function<Connectivity, Boolean> hasType(final int... types) {
+    return new Function<Connectivity, Boolean>() {
+      @Override public Boolean apply(Connectivity connectivity) throws Exception {
         for (int type : types) {
           if (connectivity.getType() == type) {
             return true;
