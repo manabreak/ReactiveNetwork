@@ -49,7 +49,7 @@ public class PreLollipopNetworkObservingStrategy implements NetworkObservingStra
 
         context.registerReceiver(receiver, filter);
       }
-    }).doOnCancel(new Action() {
+    }).doOnDispose(new Action() {
       @Override public void run() throws Exception {
         if (receiver != null) {
           context.unregisterReceiver(receiver);
