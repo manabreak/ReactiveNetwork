@@ -45,7 +45,7 @@ import io.reactivex.functions.Action;
         final NetworkRequest networkRequest = new NetworkRequest.Builder().build();
         manager.registerNetworkCallback(networkRequest, networkCallback);
       }
-    }).doOnCancel(new Action() {
+    }).doOnDispose(new Action() {
       @Override public void run() throws Exception {
         manager.unregisterNetworkCallback(networkCallback);
       }
