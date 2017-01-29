@@ -15,11 +15,9 @@
  */
 package com.github.pwittchen.reactivenetwork.library;
 
-import com.github.pwittchen.reactivenetwork.library.internet.observing.strategy.SocketInternetObservingStrategy;
 import com.github.pwittchen.reactivenetwork.library.internet.observing.error.ErrorHandler;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import com.github.pwittchen.reactivenetwork.library.internet.observing.strategy.SocketInternetObservingStrategy;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +27,12 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import rx.Observable;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+import io.reactivex.Flowable;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doThrow;
@@ -37,73 +40,80 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(RobolectricTestRunner.class) @Config(constants = BuildConfig.class)
-@SuppressWarnings("PMD") public class SocketInternetObservingStrategyTest {
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = BuildConfig.class)
+@SuppressWarnings("PMD")
+public class SocketInternetObservingStrategyTest {
 
-  private static final int INITIAL_INTERVAL_IN_MS = 0;
-  private static final int INTERVAL_IN_MS = 2000;
-  private static final String HOST = "www.google.com";
-  private static final int PORT = 80;
-  private static final int TIMEOUT_IN_MS = 30;
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
-  @Spy private SocketInternetObservingStrategy strategy;
-  @Mock private ErrorHandler errorHandler;
-  @Mock private Socket socket;
+    private static final int INITIAL_INTERVAL_IN_MS = 0;
+    private static final int INTERVAL_IN_MS = 2000;
+    private static final String HOST = "www.google.com";
+    private static final int PORT = 80;
+    private static final int TIMEOUT_IN_MS = 30;
+    @Rule public MockitoRule rule = MockitoJUnit.rule();
+    @Spy private SocketInternetObservingStrategy strategy;
+    @Mock private ErrorHandler errorHandler;
+    @Mock private Socket socket;
 
-  @Test public void shouldBeConnectedToTheInternet() {
-    // given
-    when(strategy.isConnected(HOST, PORT, TIMEOUT_IN_MS, errorHandler)).thenReturn(true);
+    @Test
+    public void shouldBeConnectedToTheInternet() {
+        // given
+        when(strategy.isConnected(HOST, PORT, TIMEOUT_IN_MS, errorHandler)).thenReturn(true);
 
-    // when
-    final Observable<Boolean> observable =
-        strategy.observeInternetConnectivity(INITIAL_INTERVAL_IN_MS, INTERVAL_IN_MS, HOST, PORT,
-            TIMEOUT_IN_MS, errorHandler);
+        // when
+        final Flowable<Boolean> observable =
+                strategy.observeInternetConnectivity(INITIAL_INTERVAL_IN_MS, INTERVAL_IN_MS, HOST, PORT,
+                        TIMEOUT_IN_MS, errorHandler);
 
-    boolean isConnected = observable.toBlocking().first();
+        // boolean isConnected = observable.toBlocking().first();
+        boolean isConnected = observable.blockingFirst();
 
-    // then
-    assertThat(isConnected).isTrue();
-  }
+        // then
+        assertThat(isConnected).isTrue();
+    }
 
-  @Test public void shouldNotBeConnectedToTheInternet() {
-    // given
-    when(strategy.isConnected(HOST, PORT, TIMEOUT_IN_MS, errorHandler)).thenReturn(false);
+    @Test
+    public void shouldNotBeConnectedToTheInternet() {
+        // given
+        when(strategy.isConnected(HOST, PORT, TIMEOUT_IN_MS, errorHandler)).thenReturn(false);
 
-    // when
-    final Observable<Boolean> observable =
-        strategy.observeInternetConnectivity(INITIAL_INTERVAL_IN_MS, INTERVAL_IN_MS, HOST, PORT,
-            TIMEOUT_IN_MS, errorHandler);
+        // when
+        final Flowable<Boolean> observable =
+                strategy.observeInternetConnectivity(INITIAL_INTERVAL_IN_MS, INTERVAL_IN_MS, HOST, PORT,
+                        TIMEOUT_IN_MS, errorHandler);
 
-    boolean isConnected = observable.toBlocking().first();
+        boolean isConnected = observable.blockingFirst();
 
-    // then
-    assertThat(isConnected).isFalse();
-  }
+        // then
+        assertThat(isConnected).isFalse();
+    }
 
-  @Test public void shouldNotBeConnectedToTheInternetWhenSocketThrowsAnExceptionOnConnect()
-      throws IOException {
-    // given
-    final InetSocketAddress address = new InetSocketAddress(HOST, PORT);
-    doThrow(new IOException()).when(socket).connect(address, TIMEOUT_IN_MS);
+    @Test
+    public void shouldNotBeConnectedToTheInternetWhenSocketThrowsAnExceptionOnConnect()
+            throws IOException {
+        // given
+        final InetSocketAddress address = new InetSocketAddress(HOST, PORT);
+        doThrow(new IOException()).when(socket).connect(address, TIMEOUT_IN_MS);
 
-    // when
-    final boolean isConnected =
+        // when
+        final boolean isConnected =
+                strategy.isConnected(socket, HOST, PORT, TIMEOUT_IN_MS, errorHandler);
+
+        // then
+        assertThat(isConnected).isFalse();
+    }
+
+    @Test
+    public void shouldHandleAnExceptionThrownDuringClosingTheSocket() throws IOException {
+        // given
+        final String errorMsg = "Could not close the socket";
+        final IOException givenException = new IOException(errorMsg);
+        doThrow(givenException).when(socket).close();
+
+        // when
         strategy.isConnected(socket, HOST, PORT, TIMEOUT_IN_MS, errorHandler);
 
-    // then
-    assertThat(isConnected).isFalse();
-  }
-
-  @Test public void shouldHandleAnExceptionThrownDuringClosingTheSocket() throws IOException {
-    // given
-    final String errorMsg = "Could not close the socket";
-    final IOException givenException = new IOException(errorMsg);
-    doThrow(givenException).when(socket).close();
-
-    // when
-    strategy.isConnected(socket, HOST, PORT, TIMEOUT_IN_MS, errorHandler);
-
-    // then
-    verify(errorHandler, times(1)).handleError(givenException, errorMsg);
-  }
+        // then
+        verify(errorHandler, times(1)).handleError(givenException, errorMsg);
+    }
 }

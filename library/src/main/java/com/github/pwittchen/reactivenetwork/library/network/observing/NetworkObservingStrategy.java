@@ -16,27 +16,29 @@
 package com.github.pwittchen.reactivenetwork.library.network.observing;
 
 import android.content.Context;
+
 import com.github.pwittchen.reactivenetwork.library.Connectivity;
-import rx.Observable;
+
+import io.reactivex.Flowable;
 
 /**
  * Network observing strategy allows to implement different strategies for monitoring network
  * connectivity change. Network monitoring API may differ depending of specific Android version.
  */
 public interface NetworkObservingStrategy {
-  /**
-   * Observes network connectivity
-   *
-   * @param context of the Activity or an Application
-   * @return Observable representing stream of the network connectivity
-   */
-  Observable<Connectivity> observeNetworkConnectivity(final Context context);
+    /**
+     * Observes network connectivity
+     *
+     * @param context of the Activity or an Application
+     * @return Observable representing stream of the network connectivity
+     */
+    Flowable<Connectivity> observeNetworkConnectivity(final Context context);
 
-  /**
-   * Handles errors, which occurred during observing network connectivity
-   *
-   * @param message to be processed
-   * @param exception which was thrown
-   */
-  void onError(final String message, final Exception exception);
+    /**
+     * Handles errors, which occurred during observing network connectivity
+     *
+     * @param message   to be processed
+     * @param exception which was thrown
+     */
+    void onError(final String message, final Exception exception);
 }

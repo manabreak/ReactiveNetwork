@@ -17,8 +17,10 @@ package com.github.pwittchen.reactivenetwork.library;
 
 import android.app.Application;
 import android.net.NetworkInfo;
+
 import com.github.pwittchen.reactivenetwork.library.network.observing.NetworkObservingStrategy;
 import com.github.pwittchen.reactivenetwork.library.network.observing.strategy.LollipopNetworkObservingStrategy;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,58 +30,62 @@ import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action1;
+
+import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(RobolectricTestRunner.class) @Config(constants = BuildConfig.class)
+@RunWith(RobolectricTestRunner.class)
+@Config(constants = BuildConfig.class)
 public class LollipopNetworkObservingStrategyTest {
 
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
-  @Spy private NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
+    @Rule public MockitoRule rule = MockitoJUnit.rule();
+    @Spy private NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
 
-  @Test public void shouldObserveConnectivity() {
-    // given
-    final NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
+    @Test
+    public void shouldObserveConnectivity() {
+        // given
+        final NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
 
-    // when
-    strategy.observeNetworkConnectivity(RuntimeEnvironment.application)
-        .subscribe(new Action1<Connectivity>() {
-          @Override public void call(Connectivity connectivity) {
+        // when
+        strategy.observeNetworkConnectivity(RuntimeEnvironment.application)
+                .subscribe(new Consumer<Connectivity>() {
+                    @Override
+                    public void accept(Connectivity connectivity) throws Exception {
+                        assertThat(connectivity.getState()).isEqualTo(NetworkInfo.State.CONNECTED);
+                    }
+                });
+    }
 
-            // then
-            assertThat(connectivity.getState()).isEqualTo(NetworkInfo.State.CONNECTED);
-          }
-        });
-  }
+    @Test
+    public void shouldStopObservingConnectivity() {
+        // given
+        final NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
+        final Application context = RuntimeEnvironment.application;
+        final Flowable<Connectivity> observable = strategy.observeNetworkConnectivity(context);
 
-  @Test public void shouldStopObservingConnectivity() {
-    // given
-    final NetworkObservingStrategy strategy = new LollipopNetworkObservingStrategy();
-    final Application context = RuntimeEnvironment.application;
-    final Observable<Connectivity> observable = strategy.observeNetworkConnectivity(context);
+        // when
+        final Disposable subscription = observable.subscribe();
+        subscription.dispose();
 
-    // when
-    final Subscription subscription = observable.subscribe();
-    subscription.unsubscribe();
+        // then
+        assertThat(subscription.isDisposed()).isTrue();
+    }
 
-    // then
-    assertThat(subscription.isUnsubscribed()).isTrue();
-  }
+    @Test
+    public void shouldCallOnError() {
+        // given
+        final String message = "error message";
+        final Exception exception = new Exception();
 
-  @Test public void shouldCallOnError() {
-    // given
-    final String message = "error message";
-    final Exception exception = new Exception();
+        // when
+        strategy.onError(message, exception);
 
-    // when
-    strategy.onError(message, exception);
-
-    // then
-    verify(strategy, times(1)).onError(message, exception);
-  }
+        // then
+        verify(strategy, times(1)).onError(message, exception);
+    }
 }

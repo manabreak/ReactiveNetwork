@@ -16,27 +16,28 @@
 package com.github.pwittchen.reactivenetwork.library.internet.observing;
 
 import com.github.pwittchen.reactivenetwork.library.internet.observing.error.ErrorHandler;
-import rx.Observable;
+
+import io.reactivex.Flowable;
 
 /**
  * Internet observing strategy allows to implement different strategies for monitoring connectivity
  * with the Internet.
  */
 public interface InternetObservingStrategy {
-  /**
-   * Observes connectivity with the Internet by opening socket connection with remote host
-   *
-   * @param initialIntervalInMs in milliseconds determining the delay of the first connectivity
-   * check
-   * @param intervalInMs in milliseconds determining how often we want to check connectivity
-   * @param host for checking Internet connectivity
-   * @param port for checking Internet connectivity
-   * @param timeoutInMs for pinging remote host in milliseconds
-   * @param errorHandler for handling errors while checking connectivity
-   * @return RxJava Observable with Boolean - true, when we have connection with host and false if
-   * not
-   */
-  Observable<Boolean> observeInternetConnectivity(final int initialIntervalInMs,
-      final int intervalInMs, final String host, final int port, final int timeoutInMs,
-      final ErrorHandler errorHandler);
+    /**
+     * Observes connectivity with the Internet by opening socket connection with remote host
+     *
+     * @param initialIntervalInMs in milliseconds determining the delay of the first connectivity
+     *                            check
+     * @param intervalInMs        in milliseconds determining how often we want to check connectivity
+     * @param host                for checking Internet connectivity
+     * @param port                for checking Internet connectivity
+     * @param timeoutInMs         for pinging remote host in milliseconds
+     * @param errorHandler        for handling errors while checking connectivity
+     * @return RxJava Observable with Boolean - true, when we have connection with host and false if
+     * not
+     */
+    Flowable<Boolean> observeInternetConnectivity(final int initialIntervalInMs,
+                                                  final int intervalInMs, final String host, final int port, final int timeoutInMs,
+                                                  final ErrorHandler errorHandler);
 }
